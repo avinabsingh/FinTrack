@@ -4,3 +4,4 @@ df = pd.read_csv("C:/Users/AVINAB/Desktop/Projects/financeTracker/data/transacti
 print(df.head(5))
 print(df.shape)
 print(df.info())
+

@@ -1,21 +1,27 @@
-export default function SummaryCard({ title, value = 0, color }) {
+import { motion } from "framer-motion";
 
-  const formattedValue = Number(value).toLocaleString(undefined, {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  });
+export default function SummaryCard({ title, value = 0, color }) {
+  const formattedValue = Number(value).toLocaleString();
 
   return (
-    <div className={`bg-white p-6 rounded-xl shadow-sm border-l-4 ${color}`}>
-      
-      <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow"
+    >
+      <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">
         {title}
       </p>
-
-      <p className="text-2xl font-bold mt-2">
+      <p className={`text-3xl font-bold mt-2 ${color}`}>
         ${formattedValue}
       </p>
-
-    </div>
+      <div className="mt-4 h-1 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+        <motion.div 
+          initial={{ width: 0 }}
+          animate={{ width: "70%" }} 
+          className={`h-full ${color.replace('text', 'bg')}`}
+        />
+      </div>
+    </motion.div>
   );
 }
