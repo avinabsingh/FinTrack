@@ -13,6 +13,8 @@ const csv = require("csv-parser");
 const Transaction = require("./models/Transaction");
 const axios = require("axios");  
 const User = require("./models/User");
+const UploadedFile = require("./models/UploadedFile");
+const { Parser } = require("json2csv");
 
 const app = express();
 const port = 8080;
@@ -97,19 +99,27 @@ app.post("/upload-csv", isAuthenticated, upload.single("file"), async (req, res)
     return res.status(400).json({ message: "No file uploaded" });
   }
 
-  const results = [];
-
   try {
+
+    
+    const uploadedFile = await UploadedFile.create({
+      user: req.user._id,
+      filename: req.file.originalname,
+      path: req.file.path
+    });
+
+    const results = [];
+
+    
     fs.createReadStream(req.file.path)
       .pipe(csv())
       .on("data", (data) => {
-
-        // basic validation
         if (!data.date || !data.category || !data.amount || !data.type) return;
         if (!["Income", "Expense"].includes(data.type)) return;
 
         results.push({
           user: req.user._id,
+          file: uploadedFile._id,  
           date: new Date(data.date),
           category: data.category,
           amount: Number(data.amount),
@@ -118,13 +128,8 @@ app.post("/upload-csv", isAuthenticated, upload.single("file"), async (req, res)
       })
       .on("end", async () => {
 
-        // OPTIONAL: Remove old data before inserting new
-        await Transaction.deleteMany({ user: req.user._id });
-
+        
         await Transaction.insertMany(results);
-
-        // delete temporary file
-        fs.unlinkSync(req.file.path);
 
         res.status(200).json({
           message: "Transactions uploaded successfully",
@@ -234,6 +239,101 @@ app.get("/dashboard", (req, res) => {
   res.status(401).json({ message: "Not authenticated" });
 });
 
+app.get("/files", isAuthenticated, async (req, res) => {
+  try {
+    const files = await UploadedFile.find({ user: req.user._id })
+      .sort({ uploadedAt: -1 });
+
+    res.json(files);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to fetch files" });
+  }
+});
+
+
+app.delete("/files/:id", isAuthenticated, async (req, res) => {
+  try {
+    const file = await UploadedFile.findOne({
+      _id: req.params.id,
+      user: req.user._id
+    });
+
+    if (!file) {
+      return res.status(404).json({ message: "File not found" });
+    }
+
+    await Transaction.deleteMany({ file: file._id });
+
+    if (fs.existsSync(file.path)) {
+      fs.unlinkSync(file.path);
+    }
+
+    await UploadedFile.deleteOne({ _id: file._id });
+
+    res.json({ message: "File and related transactions deleted successfully" });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Delete failed" });
+  }
+});
+
+app.get("/download/transactions", isAuthenticated, async (req, res) => {
+  try {
+    const transactions = await Transaction.find(
+      { user: req.user._id },
+      { _id: 0, user: 0, file: 0 }
+    );
+
+    if (!transactions.length) {
+      return res.status(400).json({ message: "No transactions found" });
+    }
+
+    const parser = new Parser();
+    const csvData = parser.parse(transactions);
+
+    res.header("Content-Type", "text/csv");
+    res.attachment("transactions.csv");
+    res.send(csvData);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Download failed" });
+  }
+});
+
+app.get("/download/summary", isAuthenticated, async (req, res) => {
+  try {
+    const transactions = await Transaction.find({ user: req.user._id });
+
+    if (!transactions.length) {
+      return res.status(400).json({ message: "No transactions found" });
+    }
+
+    let income = 0;
+    let expense = 0;
+
+    transactions.forEach(t => {
+      if (t.type === "Income") income += t.amount;
+      if (t.type === "Expense") expense += t.amount;
+    });
+
+    const summary = {
+      totalIncome: income,
+      totalExpense: expense,
+      savings: income - expense
+    };
+
+    res.header("Content-Type", "application/json");
+    res.attachment("summary.json");
+    res.send(JSON.stringify(summary, null, 2));
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Download failed" });
+  }
+});
 
 
 

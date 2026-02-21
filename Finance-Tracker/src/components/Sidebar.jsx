@@ -7,6 +7,7 @@ import {
   BarChart3,
   Wallet,
   ArrowUpCircle,
+  ArrowDownCircle,
   LogOut,
   Moon,
   Sun,
@@ -49,7 +50,8 @@ const Sidebar = () => {
     { name: "Dashboard", path: "/", icon: <LayoutDashboard size={20} /> },
     { name: "Category Analysis", path: "/categories", icon: <PieChart size={20} /> },
     { name: "Statistics", path: "/stats", icon: <BarChart3 size={20} /> },
-    { name: "Upload File", path: "/upload", icon: <ArrowUpCircle size={20} /> }
+    { name: "Upload File", path: "/upload", icon: <ArrowUpCircle size={20} /> },
+    { name: "Download", path: "/download", icon: <ArrowDownCircle size={20} /> }
   ];
 
   return (

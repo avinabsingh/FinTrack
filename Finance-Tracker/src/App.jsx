@@ -10,7 +10,7 @@ import axios from 'axios';
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import UploadPage from './pages/UploadPage';
-
+import DownloadPage from './pages/DownloadPage';
 
 const App = () => {
   const [data, setData] = useState({
@@ -189,6 +189,14 @@ const App = () => {
                 <Navigate to="/login" />
               )
             }
+          />
+          <Route 
+              path='/download'
+              element={
+                isAuthenticated ? (
+                  <DownloadPage/>
+                ) : <Navigate to="/login"/>
+              }
           />
           <Route
             path="/categories"

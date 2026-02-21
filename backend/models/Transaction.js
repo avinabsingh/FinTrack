@@ -22,6 +22,10 @@ const transactionSchema = new mongoose.Schema({
     type: String,
     enum: ["Income", "Expense"],
     required: true
+  },
+  file: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "UploadedFile"
   }
 }, { timestamps: true });
 
